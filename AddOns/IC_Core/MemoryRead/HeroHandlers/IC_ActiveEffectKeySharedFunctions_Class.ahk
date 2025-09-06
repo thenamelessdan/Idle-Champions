@@ -1,5 +1,5 @@
 
-/* INSTRUCTIONS: First, using the autooffsets/import tool, add the champion's ability information using the instructions here: 
+/* INSTRUCTIONS: First, using the auto offsets/import tool, add the champion's ability information using the instructions here: 
    https://github.com/antilectual/ScriptHub-AutomaticOffsets/blob/main/README_MODIFYING.md
    Copy the generated imports to the SharedFunctions\MemoryRead\Imports directory.
    Create a file in the SharedFunctions\IC\MemoryRead\HeroHandlers\ directory using the format IC_<CHAMPION NAME>.ahk
@@ -11,7 +11,7 @@ class ActiveEffectKeySharedFunctions
     ; After building your hero class, include the file here.
     #include *i %A_LineFile%\..\IC_Briv.ahk
     #include *i %A_LineFile%\..\IC_Havilar.ahk
-    #include *i %A_LineFile%\..\IC_HewMann.ahk
+    #include *i %A_LineFile%\..\IC_HewMaan.ahk
     #include *i %A_LineFile%\..\IC_Nerds.ahk
     #include *i %A_LineFile%\..\IC_Omin.ahk
     #include *i %A_LineFile%\..\IC_Shandie.ahk
@@ -21,6 +21,22 @@ class ActiveEffectKeySharedFunctions
     #include *i %A_LineFile%\..\IC_Thellora.ahk
     #include *i %A_LineFile%\..\IC_Nrakk.ahk
     #include *i %A_LineFile%\..\IC_Ellywick.ahk
+
+    Add(heroObject, heroName)
+    {
+        if(!IsObject(heroObject))
+            return
+        if(this[heroName] == "")
+            this[heroName] := heroObject
+        for k,v in this[heroName]
+            if(IsObject(v))
+            {
+                g_SF.Memory.ActiveEffectKeyHandler.HeroHandlerIDs[k] := heroObject.HeroID
+                g_SF.Memory.ActiveEffectKeyHandler.HeroEffectNames[k] := v.EffectKeyString
+                g_SF.Memory.ActiveEffectKeyHandler.HeroEffectKeys[v.EffectKeyString] := k
+                g_SF.Memory.ActiveEffectKeyHandler.Refresh(v.EffectKeyString)
+            }
+    }
 }
 
 

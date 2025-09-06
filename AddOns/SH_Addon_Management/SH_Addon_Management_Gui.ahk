@@ -4,7 +4,7 @@ Gui, AddonManagement:+Resize -MaximizeBox
 GUIFunctions.UseThemeBackgroundColor()
 GUIFunctions.UseThemeTextColor()
 
-AddonManagementWindowWidth := 450
+AddonManagementWindowWidth := 575
 
 Gui, AddonManagement:Add, ListView ,w%AddonManagementWindowWidth% vAddonsAvailableID hWndhLV ,  Active|Name|Version|Folder
 GUIFunctions.UseThemeListViewBackgroundColor("AddonsAvailableID")
@@ -108,3 +108,6 @@ AddonManagementSaveClicked(){
 	IfMsgBox, Yes
 		Reload
 }
+
+If (AddonManagement.ShowAddonGUI)
+	AddonOpenGuiClicked()

@@ -2,28 +2,30 @@ class IC_UserData_Class extends SH_StaticMemoryPointer
 {
     GetVersion()
     {
-        return "v0.0.1, 2023-10-28"
+        return "v0.0.3, 2025-08-11"
     }
 
     Refresh()
-    {
-        this.BaseAddress := _MemoryManager.baseAddress["mono-2.0-bdwgc.dll"]+this.ModuleOffset
-        if (this.Is64Bit != _MemoryManager.is64Bit) ; Build structure one time. 
+    {        
+        if (_MemoryManager.is64bit == "") ; Don't build offsets if no client is available to check variable types.
+            return
+        baseAddress := _MemoryManager.baseAddress["mono-2.0-bdwgc.dll"]+this.ModuleOffset
+        if (this.BasePtr.BaseAddress != baseAddress)
         {
+            this.BasePtr.BaseAddress := baseAddress
             this.Is64Bit := _MemoryManager.is64bit
-            this.CrusadersGame := {}
-            this.CrusadersGame.User := {}
-            this.CrusadersGame.User.UserData := new GameObjectStructure(this.StructureOffsets)
-            this.CrusadersGame.User.UserData.BasePtr := this
-            this.CrusadersGame.User.UserData.Is64Bit := _MemoryManager.is64Bit
-            if(!_MemoryManager.is64Bit)
+            if (this.CrusadersGame == "")
             {
-                #include *i %A_LineFile%\..\Imports\IC_UserData32_Import.ahk
+                this.CrusadersGame := {}
+                this.CrusadersGame.User := {}
+                this.CrusadersGame.User.UserData := new GameObjectStructure(this.StructureOffsets)
+                this.CrusadersGame.User.UserData.BasePtr := new SH_BasePtr(this.BasePtr.BaseAddress, this.ModuleOffset, this.StructureOffsets)
+                this.CrusadersGame.User.UserData.Is64Bit := _MemoryManager.is64Bit
+                #include *i %A_LineFile%\..\Imports\IC_UserData64_Import.ahk
+                return
             }
-            else
-            {
-                #include *i %A_LineFile%\..\Imports\IC_UserData64_Import.ahk    
-            }
+            this.CrusadersGame.User.UserData.BasePtr := new SH_BasePtr(this.BasePtr.BaseAddress, this.ModuleOffset, this.StructureOffsets, "UserData")
+            this.ResetBasePtr(this.CrusadersGame.User.UserData)
         }
     }
 }

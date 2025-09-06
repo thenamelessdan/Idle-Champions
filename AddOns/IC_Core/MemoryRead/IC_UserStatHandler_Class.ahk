@@ -2,28 +2,30 @@ class IC_UserStatHandler_Class extends SH_StaticMemoryPointer
 {
     GetVersion()
     {
-        return "v0.0.1, 2023-10-27"
+        return "v0.0.3, 2025-08-11"
     }
 
     Refresh()
-    {
-        this.BaseAddress := _MemoryManager.baseAddress["mono-2.0-bdwgc.dll"]+this.ModuleOffset
-        if (this.Is64Bit != _MemoryManager.is64Bit) ; Build structure one time. 
+    {        
+        if (_MemoryManager.is64bit == "") ; Don't build offsets if no client is available to check variable types.
+            return
+        baseAddress := _MemoryManager.baseAddress["mono-2.0-bdwgc.dll"]+this.ModuleOffset
+        if (this.BasePtr.BaseAddress != baseAddress)
         {
+            this.BasePtr.BaseAddress := baseAddress
             this.Is64Bit := _MemoryManager.is64bit
-            this.CrusadersGame := {}
-            this.CrusadersGame.User := {}
-            this.CrusadersGame.User.UserStatHandler := new GameObjectStructure(this.StructureOffsets)
-            this.CrusadersGame.User.UserStatHandler.BasePtr := this
-            this.CrusadersGame.User.UserStatHandler.Is64Bit := _MemoryManager.is64Bit
-            if(!_MemoryManager.is64Bit)
+            if (this.CrusadersGame == "")
             {
-                #include *i %A_LineFile%\..\Imports\IC_UserStatHandler32_Import.ahk
+                this.CrusadersGame := {}
+                this.CrusadersGame.User := {}
+                this.CrusadersGame.User.UserStatHandler := new GameObjectStructure(this.StructureOffsets)
+                this.CrusadersGame.User.UserStatHandler.BasePtr := new SH_BasePtr(this.BasePtr.BaseAddress, this.ModuleOffset, this.StructureOffsets)
+                this.CrusadersGame.User.UserStatHandler.Is64Bit := _MemoryManager.is64Bit
+                #include *i %A_LineFile%\..\Imports\IC_UserStatHandler64_Import.ahk
+                return
             }
-            else
-            {
-                #include *i %A_LineFile%\..\Imports\IC_UserStatHandler64_Import.ahk    
-            }
+            this.CrusadersGame.User.UserStatHandler.BasePtr := new SH_BasePtr(this.BasePtr.BaseAddress, this.ModuleOffset, this.StructureOffsets, "UserStatHandler")
+            this.ResetBasePtr(this.CrusadersGame.User.UserStatHandler)
         }
     }
 }

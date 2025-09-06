@@ -6,11 +6,28 @@
 #include %A_LineFile%\..\SH__MemoryManager.ahk
 #include %A_LineFile%\..\SH_GameObjectStructure.ahk
 
-class SH_MemoryPointer
+class SH_BasePtr
 {
     ModuleOffset := 0
     StructureOffsets := 0
     BaseAddress := ""
+    Is64bit := True
+
+    __new(baseAddress := 0, moduleOffset := 0, structureOffsets := 0, className := "")
+    {
+        this.BaseAddress := baseAddress
+        this.ModuleOffset := moduleOffset
+        this.StructureOffsets := structureOffsets
+        this.Is64Bit := _MemoryManager.is64Bit
+        this.ClassName := className
+    }
+}
+
+class SH_MemoryPointer
+{
+    ModuleOffset := 0
+    StructureOffsets := 0
+    BasePtr := {}
     Is64Bit := ""
 
     __new(moduleOffset := 0, structureOffsets := 0)
@@ -33,25 +50,33 @@ class SH_MemoryPointer
         this.Refresh()
     }
 
+    ResetBasePtr(currentObj)
+    {
+        this["basePtr"] := currentObj.BasePtr
+        for k,v in this
+        {
+            if(IsObject(v) AND ObjGetBase(v).__Class == "GameObjectStructure" AND v.FullOffsets != "")
+            {
+                v.BasePtr := currentObj.BasePtr
+                v.ResetBasePtr(this) ; Go into game objects
+            }
+        }
+    }
+
     GetVersion()
     {
-        return "v0.0.2, 2023-09-03"
+        return "v0.0.4, 2025-08-06"
     }
 
-    Refresh()
+    ; Debugging function - saves full 
+    Print()
     {
-        ; _MemoryManager should only be refreshed outside of MemoryPointer, but must be refreshed before refreshing a memory pointer.
-        _MemoryManager.Refresh()       
-        this.BaseAddress := _MemoryManager.baseAddress+this.ModuleOffset
-        this.Is64Bit := _MemoryManager.is64Bit
-    }
-
-    ResetCollections()
-    {
+        global g_string
+        FileDelete, % A_LineFile . "\..\ObjectsLog.json"
         for k,v in this
         {
             if(IsObject(v) AND ObjGetBase(v).__Class == "GameObjectStructure")
-                this[k].ResetCollections()
+                v.BuildNames(This.Base.Base.__Class . ".")
         }
     }
 }

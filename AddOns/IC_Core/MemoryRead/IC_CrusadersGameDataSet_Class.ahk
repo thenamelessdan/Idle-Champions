@@ -5,28 +5,30 @@ class IC_CrusadersGameDataSet_Class extends SH_MemoryPointer
 {
     GetVersion()
     {
-        return "v2.1.0, 2023-03-18"
+        return "v2.1.3, 2025-08-11"
     }
     
     Refresh()
-    {
-        this.BaseAddress := _MemoryManager.baseAddress["mono-2.0-bdwgc.dll"]+this.ModuleOffset
-        if (this.Is64Bit != _MemoryManager.is64Bit) ; Build structure one time. 
+    {        
+        if (_MemoryManager.is64bit == "") ; Don't build offsets if no client is available to check variable types.
+            return
+        baseAddress := _MemoryManager.baseAddress["mono-2.0-bdwgc.dll"]+this.ModuleOffset
+        if (this.BasePtr.BaseAddress != baseAddress)
         {
+            this.BasePtr.BaseAddress := baseAddress
             this.Is64Bit := _MemoryManager.is64bit
-            this.CrusadersGame := {}
-            this.CrusadersGame.Defs := {}
-            this.CrusadersGame.Defs.CrusadersGameDataSet := new GameObjectStructure( this.StructureOffsets )
-            this.CrusadersGame.Defs.CrusadersGameDataSet.BasePtr := this
-            this.CrusadersGame.Defs.CrusadersGameDataSet.Is64Bit := _MemoryManager.is64bit
-            if(!_MemoryManager.is64bit)
+            if (this.CrusadersGame == "")
             {
-                #include *i %A_LineFile%\..\Imports\IC_CrusadersGameDataSet32_Import.ahk
-            }
-            else
-            {
+                this.CrusadersGame := {}
+                this.CrusadersGame.Defs := {}
+                this.CrusadersGame.Defs.CrusadersGameDataSet := new GameObjectStructure( this.StructureOffsets)
+                this.CrusadersGame.Defs.CrusadersGameDataSet.BasePtr := new SH_BasePtr(this.BasePtr.BaseAddress, this.ModuleOffset, this.StructureOffsets)
+                this.CrusadersGame.Defs.CrusadersGameDataSet.Is64Bit := _MemoryManager.is64bit
                 #include *i %A_LineFile%\..\Imports\IC_CrusadersGameDataSet64_Import.ahk
+                return
             }
+            this.CrusadersGame.Defs.CrusadersGameDataSet.BasePtr := new SH_BasePtr(this.BasePtr.BaseAddress, this.ModuleOffset, this.StructureOffsets, "CrusadersGameDataSet")
+            this.ResetBasePtr(this.CrusadersGame.Defs.CrusadersGameDataSet)
         }
     }
 }

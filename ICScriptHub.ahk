@@ -22,7 +22,7 @@ CoordMode, Mouse, Client
 ;Modron Automation Gem Farming Script
 GetScriptHubVersion()
 {
-    return "v4.0.0, 2024-03-19"
+    return "v4.0.6, 2025-08-16" ; Must be line 25 for version checking to work.
 }
 
 ;class and methods for parsing JSON (User details sent back from a server call)
@@ -59,7 +59,7 @@ if (GUIfunctions.isDarkMode)
     g_MacroButton := A_LineFile . "\..\Images\macro-dark-100x100.png"
 }
 ;Load user settings
-g_UserSettings := IC_SharedFunctions_Class.LoadObjectFromJSON( A_LineFile . "\..\Settings.json" )
+g_UserSettings := SH_SharedFunctions.LoadObjectFromJSON( A_LineFile . "\..\Settings.json" )
 ;check if first run
 If !IsObject( g_UserSettings )
 {
@@ -78,12 +78,16 @@ if ( g_UserSettings[ "NoCtrlKeypress" ] == "" )
     g_UserSettings[ "NoCtrlKeypress" ] := 0
 if ( g_UserSettings[ "WaitForProcessTime" ] == "" )
     g_UserSettings[ "WaitForProcessTime" ] := 0
+if ( g_UserSettings[ "CheckForUpdates" ] == "" )
+{
+    g_UserSettings[ "CheckForUpdates" ] := 1
+    g_UserSettings[ "WriteSettings" ] := true
+}
 if(g_UserSettings[ "WriteSettings" ] == true)
 {
     g_UserSettings.Delete("WriteSettings")
-    IC_SharedFunctions_Class.WriteObjectToJSON( A_LineFile . "\..\Settings.json" , g_UserSettings )
+    SaveUserSettings()
 }
-
 
 global g_SF := new SH_SharedFunctions ; includes MemoryFunctions in g_SF.Memory
 
@@ -108,6 +112,11 @@ GUIFunctions.UseThemeBackgroundColor()
 Gui, ICScriptHub:Show, %  "x" . g_UserSettings[ "WindowXPosition" ] " y" . g_UserSettings[ "WindowYPosition" ] . " w" . g_TabControlWidth+5 . " h" . g_TabControlHeight, % "IC Script Hub" . (g_UserSettings[ "WindowTitle" ] ? (" - " .  g_UserSettings[ "WindowTitle" ]) : "") . "  (Loading...)"
 GUIFunctions.UseThemeTitleBar("ICScriptHub")
 ;WinSet, Style, -0xC00000, A  ; Remove the active window's title bar (WS_CAPTION).
+
+SaveUserSettings()
+{
+    SH_SharedFunctions.WriteObjectToJSON( A_LineFile . "\..\Settings.json" , g_UserSettings )
+}
 
 Reload_Clicked()
 {

@@ -25,6 +25,7 @@ Class AddonManagement
     NeedSave := 0
     AddonManagementConfigFile := A_LineFile . "\..\AddonManagement.json"
     GeneratedAddonIncludeFile := A_LineFile . "\..\..\GeneratedAddonInclude.ahk"
+    ShowAddonGUI := False
 
     ; ############################################################
     ;                        Functions
@@ -255,7 +256,7 @@ Class AddonManagement
     EnableAddon(Name, byref Version)
     {
         isNewer := false
-        ; Check if another version is allready enabled
+        ; Check if another version is already enabled
         for k,v in this.Addons 
         {
             if(v.Name = Name AND v.Version != Version AND v.Enabled)
@@ -300,12 +301,10 @@ Class AddonManagement
         ; If the file does not exist we should create it with the default settings
         if(!FileExist(this.AddonManagementConfigFile)) 
         {
-            ; Here we load the Addons that are required on first startup
-            startupAddons := []
-            startupAddons.Push(Object("Name","Addon Management","Version","v1.0."))
-            startupAddons.Push(Object("Name","IC Core","Version","v.1."))
-            this.EnabledAddons := startupAddons 
-            ; this.EnabledAddons := [Object("Name","Addon Management","Version","v1.0."),Object("Name","Briv Gem Farm","Version","v1.0."),Object("Name","Game Location Settings","Version","v0.1.")]
+            ; Here we used load the Addons that are required on first startup
+            ; startupAddons := []
+            ; startupAddons.Push(Object("Name","IC Core","Version","v.1."))
+            this.EnabledAddons := []
             forceType := 2
         }
         ; enable all addons that needed to be added
@@ -328,6 +327,9 @@ Class AddonManagement
         this.OrderAddons()
         ; Enable addons
         this.EnabledAddons := IsObject(AddonSettings["Enabled Addons"]) ? AddonSettings["Enabled Addons"] : this.EnabledAddons
+        ; Show Addon GUI if no addons loaded
+        if((this.EnabledAddons).Count() <= 0)
+            this.ShowAddonGUI := True
         for k, v in this.EnabledAddons
         {
             versionValue := v.Version
@@ -355,15 +357,10 @@ Class AddonManagement
                 updatedAddonsString .= "`n" . v.Name . " " . v.Version 
             }
             MsgBox, % updatedAddonsString
+            return
         }
         if(forceType == 2)
-        {
             this.ForceWriteSettings()
-            MsgBox, 36, Restart, Your settings file has been updated. `nIC Script Hub may need to reload. `nDo you wish to reload now?
-            IfMsgBox, Yes
-                Reload
-        }
-        
     }
 
     ForceWriteSettings()
@@ -469,18 +466,9 @@ Class AddonManagement
             if (v.Enabled)
                 generatedText .= "#include *i %A_LineFile%\..\" . v.Dir . "\" . v.Includes . "`n"
         IncludeFile := this.GeneratedAddonIncludeFile
-        if(!FileExist(IncludeFile))
-        {
-            FileAppend, %generatedText%, %IncludeFile%
-            MsgBox, 36, Restart, This looks like your first time running Script Hub. `nSettings have been updated. `nDo you wish to reload now?
-            IfMsgBox, Yes
-                Reload
-        }
-        else
-        {
+        if(FileExist(IncludeFile))
             FileDelete, %IncludeFile%
-            FileAppend, %generatedText%, %IncludeFile%
-        }
+        FileAppend, %generatedText%, %IncludeFile%
     }
     ; ------------------------------------------------------------
     ;
@@ -556,7 +544,7 @@ Class AddonManagement
         EnabledAddons := []
         for k,v in this.Addons
             if (v.Enabled)
-                EnabledAddons.Push(Object("Name", v.Name, "Version",v.Version))
+                EnabledAddons.Push(Object("Name", v.Name, "Version", v.Version, "Url", v.Url))
         ThingsToWrite := {}
         ThingsToWrite["Enabled Addons"] := EnabledAddons
         ThingsToWrite["Addon Order"] := Order
@@ -605,12 +593,14 @@ Class Addon
     Dir :=
     Name :=
     Version :=
+    MostRecentVer :=
     Includes :=
     Author :=
     Url :=
     Info :=
     Dependencies := []
     Enabled := 
+    serverCaller := new SH_ServerCalls()
 
     __New(SettingsObject) {
         If IsObject( SettingsObject ){
@@ -625,6 +615,7 @@ Class Addon
             this.Enabled := 0
         }
     }
+
     enable(){
         this.Enabled := 1
     }
